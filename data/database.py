@@ -44,4 +44,5 @@ final_df.dropna(
     inplace=True
 )
 
-final_df.to_csv(r"C:\Users\Prajjwal\OneDrive\Desktop\Projects\GenAi\ResumeAnalyzer\data\final_interview_questions.csv", index=False)
+# final_df.to_csv(r"C:\Users\Prajjwal\OneDrive\Desktop\Projects\GenAi\ResumeAnalyzer\data\final_interview_questions.csv", index=False)
+

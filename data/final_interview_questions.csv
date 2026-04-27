@@ -17721,7 +17721,7 @@ How do you bulk ingest CSV data quickly?,TimescaleDB
 Name a function to get the latest value in a bucket.,TimescaleDB
 What is the difference between tags and fields in TimescaleDB?,TimescaleDB
 How do you pause a background policy job?,TimescaleDB
-What’s a quick way to auto-tune basic settings after install?,TimescaleDB
+What's a quick way to auto-tune basic settings after install?,TimescaleDB
 What’s the default behavior for inserts that span many chunks?,TimescaleDB
 Where are TimescaleDB policies stored/managed conceptually?,TimescaleDB
 Contrast native Postgres partitioning with Timescale hypertables.,TimescaleDB
