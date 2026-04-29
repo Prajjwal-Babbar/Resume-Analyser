@@ -464,10 +464,10 @@ def chat_with_resume(history: list, user_msg: str, index, chunks) -> str:
     prompt = build_prompt(user_msg, results)
     
     # We can inject history context into the prompt
-    history_text = "\n".join([f"{m['role']}: {m['content']}" for m in history[-3:]])
+    # history_text = "\n".join([f"{m['role']}: {m['content']}" for m in history[-3:]])
     
-    full_prompt = f"Chat History:\n{history_text}\n\n{prompt}"
-    return query_llm(full_prompt)
+    # full_prompt = f"Chat History:\n{history_text}\n\n{prompt}"
+    return query_llm(prompt)
 
 
 def make_pie(score: int):

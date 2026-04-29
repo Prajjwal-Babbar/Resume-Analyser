@@ -157,17 +157,14 @@ HIRING RECOMMENDATION:
 
 
 def fetch_interview_questions(resume: str, jd: str) -> list[str]:
-    """
-    Fetches 6 relevant questions from ChromaDB using SelfQueryRetriever based on skills,
-    then uses the local LLM to generate exactly 6 technical and 2 behavioral questions.
-    """
+    
     # 1. Extract skills from JD
     jd_skills = extract_skills(jd)
     skills_str = ", ".join(jd_skills) if jd_skills else "General technical skills"
 
-    # 2. Retrieve 6 relevant questions from ChromaDB using SelfQueryRetriever
+    # 2. Retrieve 10 relevant questions from ChromaDB using SelfQueryRetriever
     try:
-        retrieval_query = f"Retrieve 6 interview questions related to: {skills_str}"
+        retrieval_query = f"Retrieve 10 interview questions related to: {skills_str}"
         retrieved_docs = retriever.get_relevant_documents(retrieval_query)
         retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
         print(f"✅ Retrieved {len(retrieved_docs)} reference questions from ChromaDB.")
@@ -175,7 +172,7 @@ def fetch_interview_questions(resume: str, jd: str) -> list[str]:
     except Exception as e:
         print(f"⚠️ SelfQueryRetriever failed: {e}. Falling back to standard vector search.")
         try:
-            standard_retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
+            standard_retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
             retrieved_docs = standard_retriever.get_relevant_documents(skills_str)
             retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
         except Exception as fallback_e:
