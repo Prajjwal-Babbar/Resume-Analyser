@@ -16,6 +16,21 @@ def query_llm(prompt, m=1024):
     )
 
     return response.choices[0].message.content
+
+def stream_llm(prompt, m=2048):
+    response = client.chat.completions.create(
+        model="mistral-7b-instruct",
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens = m,
+        temperature = 0.4,
+        stream=True
+    )
+
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            yield chunk.choices[0].delta.content
     
     
 def build_prompt(question, context_chunks):

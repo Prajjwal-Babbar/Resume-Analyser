@@ -20,7 +20,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Backend.parser import extract_text
 from Backend.match import extract_skills, calculate_match
-from Backend.MyLLM import query_llm, build_prompt
+from Backend.MyLLM import query_llm, build_prompt, stream_llm
 from Backend.RAG import chunker, create_embeddings, build_faiss_index, retrieve_relevant_chunks
 
 # ─── PAGE CONFIG ───────────────────────────────────────────────────────────────
@@ -41,6 +41,23 @@ st.markdown("""
 
 html, body, [class*="css"] {
     font-family: 'DM Sans', -apple-system, sans-serif;
+}
+
+/* ── Success / Error alerts ── */
+div[data-testid="stAlert"][data-baseweb="notification"] {
+    border-radius: 12px !important;
+}
+[data-testid="stAlert"] > div[role="alert"] {
+    border-radius: 12px !important;
+}
+/* Success box: white bg with green left border */
+div[data-testid="stAlert"].st-success,
+div[class*="stAlert"] div[class*="success"] {
+    background: #ffffff !important;
+    border: 1px solid #bbf7d0 !important;
+    border-left: 4px solid #059669 !important;
+    color: #14532d !important;
+    box-shadow: 0 2px 10px rgba(5,150,105,0.08) !important;
 }
 
 .stApp {
@@ -336,6 +353,7 @@ html, body, [class*="css"] {
     font-size: 0.9rem !important;
     background: #fafaf8 !important;
     color: #111111 !important;
+    caret-color: #111111 !important;
 }
 .stTextArea textarea:focus, .stTextInput input:focus {
     border-color: #059669 !important;
@@ -508,6 +526,7 @@ defaults = {
     "deep_feedback": "",
     "index": None,
     "chunks": None,
+    "chat_input_key": 0,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -548,7 +567,7 @@ st.markdown("""
 
 # ── UPLOAD SECTION ─────────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("#### 📂 Upload Your Documents")
+st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">📂 Upload Your Documents</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns(2, gap="large")
 
@@ -637,7 +656,7 @@ if st.session_state.analysis:
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     # ── Score row ────────────────────────────────────────────────────────────
-    st.markdown("#### 📊 Your Match Score")
+    st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">📊 Your Match Score</div>', unsafe_allow_html=True)
 
     r1, r2, r3 = st.columns([1.2, 1.2, 1.6], gap="large")
 
@@ -695,7 +714,7 @@ if st.session_state.analysis:
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     # ── Skills breakdown ──────────────────────────────────────────────────────
-    st.markdown("#### 🧩 Skills Breakdown")
+    st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">🧩 Skills Breakdown</div>', unsafe_allow_html=True)
     s1, s2 = st.columns(2, gap="large")
 
     with s1:
@@ -725,7 +744,7 @@ if st.session_state.analysis:
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     # ── Strengths & Weaknesses + Tips ─────────────────────────────────────────
-    st.markdown("#### 🔎 Deep Analysis")
+    st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">🔎 Deep Analysis</div>', unsafe_allow_html=True)
     d1, d2 = st.columns(2, gap="large")
 
     with d1:
@@ -764,18 +783,21 @@ if st.session_state.analysis:
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     # ── AI Detailed Feedback (streaming) ──────────────────────────────────────
-    st.markdown("#### 🧠 Get a Detailed AI Roadmap")
+    st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">🧠 AI Roadmap Generator</div>', unsafe_allow_html=True)
     st.markdown("""<p style='font-size:0.9rem;color:#666;margin-bottom:1rem;'>
     Click below for a personalised, in-depth analysis of your profile vs this role —
     including a step-by-step plan to make yourself the ideal candidate.</p>""",
                 unsafe_allow_html=True)
 
-    fb_col1, fb_col2, _ = st.columns([1.5, 1.5, 2])
-    with fb_col1:
-        deep_btn = st.button("✨  Generate Full Roadmap", use_container_width=True)
+    if not st.session_state.deep_feedback:
+        roadmap_placeholder = st.empty()
+        fb_col1, fb_col2, _ = st.columns([1.5, 1.5, 2])
+        with fb_col1:
+            deep_btn = roadmap_placeholder.button("✨  Generate Full Roadmap", use_container_width=True)
 
-    if deep_btn:
-        prompt = f"""You are a top-tier career strategist and resume coach.
+        if deep_btn:
+            roadmap_placeholder.empty() # Remove button while generating
+            prompt = f"""You are a top-tier career strategist and resume coach.
 Based on the resume, job description and analysis below, write a DETAILED, PERSONALISED career roadmap.
 
 MATCH SCORE: {score}/100
@@ -798,29 +820,41 @@ Write a comprehensive 400-600 word roadmap covering:
 5. A realistic timeline to become a strong candidate
 Be specific, actionable, and encouraging."""
 
-        with st.spinner("Generating roadmap..."):
-            feedback_text = query_llm(prompt, m = 2048)
-        
-        st.session_state.deep_feedback = feedback_text
-        st.markdown(
-            f'<div style="font-size:1rem;line-height:1.75;color:#c0390b;font-weight:500;'
-            f'padding:1.2rem 1.6rem;border-radius:14px;background:rgba(192,57,11,0.07);'
-            f'border-left:4px solid #c0390b;white-space:pre-wrap;">{feedback_text}</div>',
-            unsafe_allow_html=True
-        )
+            stream_box = st.empty()
+            full_response = ""
+            
+            for chunk in stream_llm(prompt, m=2048):
+                full_response += chunk
+                stream_box.markdown(
+                    f'<div style="font-size:1rem;line-height:1.75;color:#1e293b;font-weight:500;'
+                    f'padding:1.4rem 1.8rem;border-radius:14px;background:#ffffff;'
+                    f'border:1px solid rgba(0,0,0,0.05);box-shadow:0 4px 15px rgba(0,0,0,0.03);'
+                    f'border-left:4px solid #059669;white-space:pre-wrap;">{full_response}▌</div>',
+                    unsafe_allow_html=True
+                )
+            
+            stream_box.markdown(
+                f'<div style="font-size:1rem;line-height:1.75;color:#1e293b;font-weight:500;'
+                f'padding:1.4rem 1.8rem;border-radius:14px;background:#ffffff;'
+                f'border:1px solid rgba(0,0,0,0.05);box-shadow:0 4px 15px rgba(0,0,0,0.03);'
+                f'border-left:4px solid #059669;white-space:pre-wrap;">{full_response}</div>',
+                unsafe_allow_html=True
+            )
+            st.session_state.deep_feedback = full_response
 
-    elif st.session_state.deep_feedback:
+    else:
         st.markdown(
-            f'<div style="font-size:1rem;line-height:1.75;color:#c0390b;font-weight:500;'
-            f'padding:1.2rem 1.6rem;border-radius:14px;background:rgba(192,57,11,0.07);'
-            f'border-left:4px solid #c0390b;white-space:pre-wrap;">{st.session_state.deep_feedback}</div>',
+            f'<div style="font-size:1rem;line-height:1.75;color:#1e293b;font-weight:500;'
+            f'padding:1.4rem 1.8rem;border-radius:14px;background:#ffffff;'
+            f'border:1px solid rgba(0,0,0,0.05);box-shadow:0 4px 15px rgba(0,0,0,0.03);'
+            f'border-left:4px solid #059669;white-space:pre-wrap;">{st.session_state.deep_feedback}</div>',
             unsafe_allow_html=True
         )
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     # ── CHATBOT ───────────────────────────────────────────────────────────────
-    st.markdown("#### 💬 Ask Anything About Your Resume")
+    st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">💬 Resume Chatbot</div>', unsafe_allow_html=True)
     st.markdown("""<p style='font-size:0.9rem;color:#666;margin-bottom:1rem;'>
     Chat with AI about your resume, the role, how to improve your application, 
     or anything else career-related.</p>""", unsafe_allow_html=True)
@@ -840,7 +874,7 @@ Be specific, actionable, and encouraging."""
         "Ask a question",
         placeholder="e.g. How should I rewrite my experience section for this role?",
         label_visibility="collapsed",
-        key="chat_input",
+        key=f"chat_input_{st.session_state.chat_input_key}",
     )
 
     cc1, cc2, _ = st.columns([1.5, 1.2, 3])
@@ -861,6 +895,7 @@ Be specific, actionable, and encouraging."""
                 st.session_state.chunks
             )
         st.session_state.chat_history.append({"role": "assistant", "content": reply})
+        st.session_state.chat_input_key += 1  # Force input box to clear
         st.rerun()
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
@@ -887,12 +922,3 @@ Be specific, actionable, and encouraging."""
             st.switch_page("pages/1_Mock_Interviewer.py")
 
 st.markdown("</div>", unsafe_allow_html=True)  # close section-wrap
-
-# ─── FOOTER ────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div style="text-align:center;padding:2rem;border-top:1px solid #e5e5e2;
-font-size:0.8rem;color:#aaa;margin-top:1rem;">
-  ResumeIQ · Built with Streamlit & Claude AI &nbsp;·&nbsp; 
-  <span style='color:#e8701a;'>♥</span> for your college project
-</div>
-""", unsafe_allow_html=True)

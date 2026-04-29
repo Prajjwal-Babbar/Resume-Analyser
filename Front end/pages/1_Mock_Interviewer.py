@@ -59,44 +59,44 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .section-wrap { max-width:1100px; margin:0 auto; padding:2rem 2.5rem 3rem; }
 
 /* Cards */
-.card { background:#fff; border-radius:20px; padding:1.6rem 1.8rem;
-  border:1px solid rgba(0,0,0,0.05); box-shadow:0 2px 18px rgba(0,0,0,0.055); }
-.card-orange { background:linear-gradient(140deg,#fbbf24 0%,#f97316 55%,#ea580c 100%); border:none; color:white; }
-.card-green  { background:linear-gradient(140deg,#059669 0%,#0f6640 60%,#064e2e 100%); border:none; color:white; }
+.card { background:#ffffff; border-radius:16px; padding:1.6rem 1.8rem;
+  border:1px solid rgba(0,0,0,0.03); box-shadow:0 4px 20px rgba(0,0,0,0.04); }
+.card-orange { background:#ffffff; border:1px solid rgba(0,0,0,0.04); color:#1e293b; }
+.card-green  { background:#ffffff; border:1px solid rgba(0,0,0,0.04); color:#1e293b; }
 
 /* Interview Q&A bubbles */
 .iv-question {
-    background: linear-gradient(140deg,#059669,#0f6640);
-    color:white; border-radius:18px 18px 18px 4px;
-    padding:1.1rem 1.4rem; font-size:0.95rem; line-height:1.6;
+    background: #1e293b;
+    color:#f8fafc; border-radius:16px 16px 16px 4px;
+    padding:1.2rem 1.5rem; font-size:0.95rem; line-height:1.6;
     font-weight:500; margin-bottom:0.8rem;
-    box-shadow: 0 4px 16px rgba(5,150,105,0.25);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 .iv-question .q-label {
-    font-size:0.7rem; font-weight:700; letter-spacing:1px;
-    text-transform:uppercase; color:rgba(255,255,255,0.6); margin-bottom:0.3rem;
+    font-size:0.72rem; font-weight:700; letter-spacing:1px;
+    text-transform:uppercase; color:#94a3b8; margin-bottom:0.4rem;
 }
 
 .iv-answer {
-    background:#fff; border:1px solid rgba(0,0,0,0.07);
-    border-radius:18px 18px 4px 18px; padding:1.1rem 1.4rem;
-    font-size:0.9rem; line-height:1.6; color:#222;
-    box-shadow:0 2px 12px rgba(0,0,0,0.05); margin-bottom:0.8rem;
+    background:#ffffff; border:1px solid rgba(0,0,0,0.04);
+    border-radius:16px 16px 4px 16px; padding:1.2rem 1.5rem;
+    font-size:0.95rem; line-height:1.6; color:#334155;
+    box-shadow:0 2px 10px rgba(0,0,0,0.02); margin-bottom:0.8rem;
 }
 .iv-answer .a-label {
-    font-size:0.7rem; font-weight:700; letter-spacing:1px;
-    text-transform:uppercase; color:#aaa; margin-bottom:0.3rem;
+    font-size:0.72rem; font-weight:700; letter-spacing:1px;
+    text-transform:uppercase; color:#94a3b8; margin-bottom:0.4rem;
 }
 
 .iv-feedback {
-    background: #f0fdf4; border:1px solid #bbf7d0;
-    border-radius:14px; padding:1rem 1.3rem;
-    font-size:0.88rem; line-height:1.6; color:#14532d;
-    margin-bottom:1.2rem;
+    background: #f8fafc; border:1px solid #e2e8f0;
+    border-radius:14px; padding:1.2rem 1.5rem;
+    font-size:0.9rem; line-height:1.6; color:#334155;
+    margin-bottom:1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 .iv-feedback .fb-label {
-    font-size:0.7rem; font-weight:700; letter-spacing:1px;
-    text-transform:uppercase; color:#059669; margin-bottom:0.4rem;
+    font-size:0.72rem; font-weight:700; letter-spacing:1px;
+    text-transform:uppercase; color:#059669; margin-bottom:0.5rem;
 }
 
 /* Progress dots */
@@ -150,6 +150,35 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 div[data-testid="stSpinner"], div[data-testid="stSpinner"] * {
     color: #0f6640 !important;
     font-weight: 600 !important;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 {
+    color: #1e293b !important;
+    font-family: 'DM Serif Display', serif !important;
+}
+
+/* ── Expanders ── */
+[data-testid="stExpander"] summary {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    background: #ffffff !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(0,0,0,0.05) !important;
+}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    background: #f8fafc !important;
+    border-radius: 0 0 10px 10px !important;
+    border: 1px solid rgba(0,0,0,0.04) !important;
+    border-top: none !important;
+    color: #334155 !important;
+}
+
+/* ── caret fix for textareas ── */
+.stTextArea textarea {
+    caret-color: #111111 !important;
+    color: #111111 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -245,15 +274,15 @@ if not st.session_state.iv_started:
     with c1:
         st.markdown("""<div class="card card-green" style="text-align:center;padding:1.8rem;">
           <div style="font-size:2rem;margin-bottom:0.6rem;">🎯</div>
-          <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:white;margin-bottom:0.4rem;">Personalised</div>
-          <p style="color:rgba(255,255,255,0.8);font-size:0.84rem;line-height:1.5;">
+          <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:#1e293b;margin-bottom:0.4rem;">Personalised</div>
+          <p style="color:#64748b;font-size:0.84rem;line-height:1.5;">
             Questions crafted from your resume and the specific job role.</p>
         </div>""", unsafe_allow_html=True)
     with c2:
         st.markdown("""<div class="card card-orange" style="text-align:center;padding:1.8rem;">
           <div style="font-size:2rem;margin-bottom:0.6rem;">⚡</div>
-          <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:white;margin-bottom:0.4rem;">Instant Feedback</div>
-          <p style="color:rgba(255,255,255,0.8);font-size:0.84rem;line-height:1.5;">
+          <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:#1e293b;margin-bottom:0.4rem;">Instant Feedback</div>
+          <p style="color:#64748b;font-size:0.84rem;line-height:1.5;">
             Get scored and coached after every single answer.</p>
         </div>""", unsafe_allow_html=True)
     with c3:
@@ -458,22 +487,36 @@ elif st.session_state.iv_done:
     """, unsafe_allow_html=True)
 
     # Per-question scores
-    st.markdown("#### 📋 Question-by-Question Breakdown")
+    st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">📋 Question-by-Question Breakdown</div>', unsafe_allow_html=True)
     for i, r in enumerate(answers, 1):
         ev = r.get("eval", {})
         s  = ev.get("score", 0)
         q_max = 10 if r['type'] == 'Technical' else 20
-        with st.expander(f"Q{i} [{r['type']}] — Score: {s}/{q_max} · {ev.get('verdict','')}"):
-            st.markdown(f"**Question:** {r['question']}")
-            st.markdown(f"**Your Answer:** {r['answer']}")
-            st.markdown(f"✅ **Strengths:** {ev.get('strengths','–')}")
-            st.markdown(f"🔧 **Improvements:** {ev.get('improvements','–')}")
-            st.markdown(f"💡 **Key point:** {ev.get('ideal_hint','–')}")
+        score_color = "#059669" if s/q_max >= 0.7 else ("#f59e0b" if s/q_max >= 0.5 else "#ef4444")
+        with st.expander(f"Q{i} [{r['type']}]  —  Score: {s}/{q_max}  ·  {ev.get('verdict','')}"):
+            st.markdown(f"""
+            <div style="background:#1e293b;border-radius:12px;padding:1rem 1.2rem;margin-bottom:0.8rem;">
+                <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:0.3rem;">🎤 Question</div>
+                <div style="color:#f8fafc;font-size:0.95rem;line-height:1.6;font-weight:500;">{r['question']}</div>
+            </div>
+            <div style="background:#ffffff;border:1px solid rgba(0,0,0,0.05);border-radius:12px;padding:1rem 1.2rem;margin-bottom:0.8rem;">
+                <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:0.3rem;">👤 Your Answer</div>
+                <div style="color:#334155;font-size:0.92rem;line-height:1.6;">{r['answer']}</div>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.2rem;">
+                <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#059669;margin-bottom:0.6rem;">🤖 AI Feedback — Score: <span style='color:{score_color};font-weight:800;'>{s}/{q_max}</span></div>
+                <div style="color:#334155;font-size:0.9rem;line-height:1.7;">
+                    <strong style="color:#1e293b;">✅ Strengths:</strong> {ev.get('strengths','–')}<br><br>
+                    <strong style="color:#1e293b;">🔧 Improvements:</strong> {ev.get('improvements','–')}<br><br>
+                    <strong style="color:#1e293b;">💡 Key point missed:</strong> {ev.get('ideal_hint','–')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     # Final verdict (streamed)
-    st.markdown("#### 🤖 AI Final Verdict & Prep Advice")
+    st.markdown('<div style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(90deg,#f59e0b22,#f9731622);border:1px solid #f9731655;color:#c2640f;font-size:0.82rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:0.38rem 1.1rem;border-radius:20px;margin-bottom:1rem;">🤖 AI Final Verdict &amp; Prep Advice</div>', unsafe_allow_html=True)
 
     if not st.session_state.iv_verdict:
         vb1, vb2, _ = st.columns([1.5, 1.5, 3])
@@ -512,10 +555,4 @@ elif st.session_state.iv_done:
 
 st.markdown("</div>", unsafe_allow_html=True)  # close section-wrap
 
-# ─── FOOTER ────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div style="text-align:center;padding:2rem;border-top:1px solid #e5e5e2;
-font-size:0.8rem;color:#aaa;margin-top:1rem;">
-  ResumeIQ Mock Interviewer · Powered by Claude AI
-</div>
-""", unsafe_allow_html=True)
+
