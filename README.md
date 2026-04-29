@@ -81,7 +81,7 @@ streamlit run Home.py
 
 ## 📸 Screenshots
 
-![Project Demo](Pics\SampleImage.png)
+![Project Demo](./Pics/SampleImage.png)
 
 ---
 
