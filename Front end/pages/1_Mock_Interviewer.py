@@ -32,9 +32,11 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .stApp { background: #e3d5c8; font-family: 'DM Sans', sans-serif; }
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding: 3rem 2rem !important; max-width: 1160px !important; }
-section[data-testid="stSidebar"] { background: #1a1a1a; }
-section[data-testid="stSidebar"] * { color: #e5e5e5 !important; }
-section[data-testid="stSidebar"] input { color: #1a1a1a !important; }
+/* Hide sidebar completely */
+[data-testid="stSidebar"] { display: none !important; }
+[data-testid="stSidebarNav"] { display: none !important; }
+[data-testid="collapsedControl"] { display: none !important; }
+.st-emotion-cache-6q9sum.ef3ps4l2 { display: none !important; }
 
 /* Navbar */
 .navbar {
@@ -168,28 +170,6 @@ for k, v in iv_defaults.items():
         st.session_state[k] = v
 
 
-# ─── SIDEBAR ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### ⚙️ Settings")
-    st.markdown("---")
-    st.markdown("**Interview Mode**")
-    mode = st.selectbox("Difficulty", ["Standard", "Hard (Senior)", "Easy (Entry-level)"],
-                        label_visibility="collapsed")
-    st.session_state.iv_mode = mode
-
-    num_q = st.slider("Number of Questions", 4, 12, 8)
-
-    st.markdown("---")
-    if st.session_state.iv_started and not st.session_state.iv_done:
-        progress = st.session_state.iv_current
-        total = len(st.session_state.iv_questions)
-        st.markdown(f"**Progress:** {progress}/{total}")
-        st.progress(progress / max(total, 1))
-
-    if st.button("🔄 Restart Interview"):
-        for k, v in iv_defaults.items():
-            st.session_state[k] = v
-        st.rerun()
 
 
 # ─── NAVBAR ────────────────────────────────────────────────────────────────────
@@ -305,15 +285,14 @@ if not st.session_state.iv_started:
                 # convert to the list of dictionaries expected by the UI
                 qs = []
                 for i, q_text in enumerate(qs_strings):
-                    q_type = "Technical" if i < 4 else "Behavioural"
+                    q_type = "Technical" if i < 6 else "Behavioural"
                     qs.append({
                         "id": i + 1,
                         "type": q_type,
                         "question": q_text
                     })
 
-                # If the user asked for fewer questions, truncate
-                qs = qs[:num_q]
+                # Questions are already formatted via interview_engine.py (8 total: 6 tech, 2 behavioral)
 
                 st.session_state.iv_questions = qs
                 st.session_state.iv_current = 0
@@ -363,9 +342,14 @@ elif st.session_state.iv_started and not st.session_state.iv_done:
             {prev['answer']}
         </div>""", unsafe_allow_html=True)
         ev = prev.get("eval", {})
-        score_color = "#059669" if ev.get("score",5)>=7 else ("#f59e0b" if ev.get("score",5)>=5 else "#ef4444")
+        q_max_score = 10 if prev['type'] == 'Technical' else 20
+        score_val = ev.get("score", 5)
+        # Normalise for color logic (0-1)
+        norm_score = score_val / q_max_score
+        score_color = "#059669" if norm_score >= 0.7 else ("#f59e0b" if norm_score >= 0.5 else "#ef4444")
+        
         st.markdown(f"""<div class="iv-feedback">
-            <div class="fb-label">🤖 AI Feedback · Score: <span style='color:{score_color};font-weight:800;'>{ev.get('score','?')}/10</span> — {ev.get('verdict','')}</div>
+            <div class="fb-label">🤖 AI Feedback · Score: <span style='color:{score_color};font-weight:800;'>{score_val}/{q_max_score}</span> — {ev.get('verdict','')}</div>
             <strong>✅ Strengths:</strong> {ev.get('strengths','')}<br><br>
             <strong>🔧 Improve:</strong> {ev.get('improvements','')}<br><br>
             <strong>💡 Key point missed:</strong> {ev.get('ideal_hint','')}<br><br>
@@ -448,14 +432,14 @@ elif st.session_state.iv_started and not st.session_state.iv_done:
 elif st.session_state.iv_done:
 
     answers = st.session_state.iv_answers
-    # Include skipped questions as 0 so they drag the average down fairly
-    scores  = [r["eval"].get("score", 0) for r in answers]
-    avg     = sum(scores) / len(scores) if scores else 0
-    pct     = round(avg * 10)
+    # Final percentage based on total max score (6 * 10 + 2 * 20 = 100)
+    total_score = sum([r["eval"].get("score", 0) for r in answers])
+    total_max = sum([10 if r['type'] == 'Technical' else 20 for r in answers])
+    pct = round((total_score / total_max) * 100) if total_max > 0 else 0
 
-    verdict_class = "verdict-great" if avg >= 7 else ("verdict-ok" if avg >= 5 else "verdict-need")
-    verdict_emoji = "🎉" if avg >= 7 else ("👍" if avg >= 5 else "📚")
-    verdict_text  = "Strong Candidate" if avg >= 7 else ("Decent Fit" if avg >= 5 else "Needs More Prep")
+    verdict_class = "verdict-great" if pct >= 70 else ("verdict-ok" if pct >= 50 else "verdict-need")
+    verdict_emoji = "🎉" if pct >= 70 else ("👍" if pct >= 50 else "📚")
+    verdict_text  = "Strong Candidate" if pct >= 70 else ("Decent Fit" if pct >= 50 else "Needs More Prep")
 
     # Score banner
     st.markdown(f"""
@@ -465,10 +449,10 @@ elif st.session_state.iv_done:
         {verdict_text}
       </div>
       <div style="font-size:3.5rem;font-weight:800;color:white;line-height:1;margin:0.5rem 0;">
-        {avg:.1f}<span style="font-size:1.5rem;opacity:0.6;">/10</span>
+        {pct}<span style="font-size:1.5rem;opacity:0.6;">%</span>
       </div>
       <div style="color:rgba(255,255,255,0.7);font-size:0.9rem;">
-        Average score across {len(answers)} questions
+        Overall performance across technical and behavioural rounds
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -478,8 +462,8 @@ elif st.session_state.iv_done:
     for i, r in enumerate(answers, 1):
         ev = r.get("eval", {})
         s  = ev.get("score", 0)
-        sc = "#059669" if s >= 7 else ("#f59e0b" if s >= 5 else "#ef4444")
-        with st.expander(f"Q{i} [{r['type']}] — Score: {s}/10 · {ev.get('verdict','')}"):
+        q_max = 10 if r['type'] == 'Technical' else 20
+        with st.expander(f"Q{i} [{r['type']}] — Score: {s}/{q_max} · {ev.get('verdict','')}"):
             st.markdown(f"**Question:** {r['question']}")
             st.markdown(f"**Your Answer:** {r['answer']}")
             st.markdown(f"✅ **Strengths:** {ev.get('strengths','–')}")

@@ -1,8 +1,58 @@
+import os
 from openai import OpenAI
+from langchain_chroma import Chroma
+from langchain_openai import ChatOpenAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.retrievers.self_query.base import SelfQueryRetriever
+from langchain.chains.query_constructor.base import AttributeInfo
+
+# Import extract_skills from match.py
+try:
+    from Backend.match import extract_skills
+except ImportError:
+    from match import extract_skills
 
 client = OpenAI(
     base_url="http://localhost:1234/v1",
     api_key="lm-studio"
+)
+
+# ─────────────────────────────────────────────────────────────────
+# VECTOR DB SETUP (Self-Query Retriever)
+# ─────────────────────────────────────────────────────────────────
+
+CHROMA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "chroma_db"))
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+vectorstore = Chroma(
+    collection_name="interview_questions",
+    persist_directory=CHROMA_PATH,
+    embedding_function=embeddings
+)
+
+metadata_field_info = [
+    AttributeInfo(
+        name="category",
+        description="The category of the interview question (e.g., Machine Learning, Data Science, etc.)",
+        type="string",
+    ),
+]
+document_content_description = "Technical and behavioral interview questions"
+
+llm_for_retriever = ChatOpenAI(
+    model="mistral-7b-instruct",
+    openai_api_base="http://localhost:1234/v1",
+    openai_api_key="lm-studio",
+    temperature=0
+)
+
+retriever = SelfQueryRetriever.from_llm(
+    llm_for_retriever,
+    vectorstore,
+    document_content_description,
+    metadata_field_info,
+    verbose=True,
+    search_kwargs={"k": 6}
 )
 
 # ─────────────────────────────────────────────────────────────────
@@ -14,8 +64,8 @@ QUESTION_BUILD_TEMPLATE = """You are a professional technical interviewer.
 Based on the candidate's resume and the job description provided below, generate exactly 8 interview questions.
 
 Rules:
-- Questions 1-4 must be TECHNICAL: focused on skills, tools, and technologies mentioned in the resume and job description.
-- Questions 5-8 must be BEHAVIORAL: focused on past experiences, problem-solving, and soft skills relevant to the role.
+- Questions 1-6 must be TECHNICAL: focused on skills, tools, and technologies mentioned in the resume and job description.
+- Questions 7-8 must be BEHAVIORAL: focused on past experiences, problem-solving, and soft skills relevant to the role.
 - Every question must be directly relevant to the candidate's specific profile and the job role.
 - Do NOT generate generic or random questions.
 - Do NOT repeat similar questions.
@@ -56,7 +106,7 @@ Job Description Context:
 
 Provide your evaluation in EXACTLY this JSON format (no extra text, no markdown fences):
 {{
-  "score": [Integer from 1 to 10],
+  "score": [Integer from 0 to 10] if it is a technical question, [Integer from 0 to 20] if it is a behavioral question,
   "verdict": "[Excellent | Good | Average | Needs Work]",
   "strengths": "[One sentence on what was done well]",
   "improvements": "[One actionable specific suggestion to improve]",
@@ -108,14 +158,60 @@ HIRING RECOMMENDATION:
 
 def fetch_interview_questions(resume: str, jd: str) -> list[str]:
     """
-    Sends a prompt to the local LLM to produce 8 tailored interview questions
-    based on the candidate's resume and the job description.
-    Returns a list of question strings (max 8).
+    Fetches 6 relevant questions from ChromaDB using SelfQueryRetriever based on skills,
+    then uses the local LLM to generate exactly 6 technical and 2 behavioral questions.
     """
-    prompt = QUESTION_BUILD_TEMPLATE.format(
-        resume=resume[:1500],
-        jd=jd[:1000]
-    )
+    # 1. Extract skills from JD
+    jd_skills = extract_skills(jd)
+    skills_str = ", ".join(jd_skills) if jd_skills else "General technical skills"
+
+    # 2. Retrieve 6 relevant questions from ChromaDB using SelfQueryRetriever
+    try:
+        retrieval_query = f"Retrieve 6 interview questions related to: {skills_str}"
+        retrieved_docs = retriever.get_relevant_documents(retrieval_query)
+        retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
+    except Exception as e:
+        print(f"⚠️ SelfQueryRetriever failed: {e}. Falling back to standard vector search.")
+        try:
+            standard_retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
+            retrieved_docs = standard_retriever.get_relevant_documents(skills_str)
+            retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
+        except Exception as fallback_e:
+            print(f"⚠️ Fallback vector search also failed: {fallback_e}")
+            retrieved_context = "No reference questions retrieved."
+
+    # 3. Construct the prompt for the final 8 questions
+    prompt = f"""You are a professional technical interviewer.
+
+Based on the candidate's resume, the job description, and the retrieved reference questions provided below, generate exactly 8 interview questions.
+
+Reference Questions (use these for inspiration or direct use if highly relevant):
+{retrieved_context}
+
+Rules:
+- Questions 1-6 must be TECHNICAL: focused on skills, tools, and technologies mentioned in the resume and job description. Use the reference questions to ensure high quality and relevance.
+- Questions 7-8 must be BEHAVIORAL: focused on past experiences, problem-solving, and soft skills relevant to the role.
+- Every question must be directly relevant to the candidate's specific profile and the job role.
+- Do NOT generate generic or random questions.
+- Do NOT repeat similar questions.
+- Output ONLY a numbered list of 8 questions. No extra text, no introduction, no explanation.
+
+Resume:
+{resume[:1500]}
+
+Job Description:
+{jd[:1000]}
+
+Output format (strictly follow this):
+1. [Question]
+2. [Question]
+3. [Question]
+4. [Question]
+5. [Question]
+6. [Question]
+7. [Question]
+8. [Question]
+"""
 
     # Initialize before try so Pylance knows it is always bound
     response = None
@@ -123,7 +219,7 @@ def fetch_interview_questions(resume: str, jd: str) -> list[str]:
         response = client.chat.completions.create(
             model="mistral-7b-instruct",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=512,
+            max_tokens=800,
             temperature=0.5
         )
     except Exception as e:

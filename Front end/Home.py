@@ -59,9 +59,11 @@ html, body, [class*="css"] {
     box-shadow: none !important;
     border: none !important;
 }
-section[data-testid="stSidebar"] { background: #1a1a1a; }
-section[data-testid="stSidebar"] * { color: #e5e5e5 !important; }
-section[data-testid="stSidebar"] input { color: #1a1a1a !important; }
+/* Hide sidebar completely */
+[data-testid="stSidebar"] { display: none !important; }
+[data-testid="stSidebarNav"] { display: none !important; }
+[data-testid="collapsedControl"] { display: none !important; }
+.st-emotion-cache-6q9sum.ef3ps4l2 { display: none !important; }
 
 /* ── Navbar ── */
 .navbar {
@@ -512,16 +514,6 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 
-# ─── SIDEBAR ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### ⚙️ Settings")
-    st.markdown("---")
-    if st.session_state.analysis:
-        st.success("✅ Analysis ready")
-        if st.button("🔄 Reset"):
-            for k, v in defaults.items():
-                st.session_state[k] = v
-            st.rerun()
 
 
 # ─── NAVBAR ────────────────────────────────────────────────────────────────────

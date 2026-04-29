@@ -23,7 +23,12 @@ def build_prompt(question, context_chunks):
     context = "\n\n".join(context_chunks[:1])[:800]
 
     prompt = f"""
-You are an AI career assistant.
+
+if the question is a greeting, like Hi, Hello, Hey, Good Morning, Good Afternoon, Good Evening, Good Night, then answer politely and briefly.
+
+else if the question is not related to the context, then answer politely and briefly that it is not related to the context of your resume or job please ask something related to your resume.
+
+Only if the question is related to the context of your resume or job description then, You are an AI career assistant:
 
 Use the following context (resume + job description) to answer the question.
 
