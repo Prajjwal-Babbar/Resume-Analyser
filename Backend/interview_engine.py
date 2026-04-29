@@ -138,7 +138,7 @@ def fetch_interview_questions(resume: str, jd: str) -> list[str]:
 
     # 2. Retrieve relevant questions from ChromaDB using standard retriever
     try:
-        retrieved_docs = retriever.get_relevant_documents(skills_str)
+        retrieved_docs = retriever.invoke(skills_str)
         retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
         print(f"✅ Retrieved {len(retrieved_docs)} reference questions from ChromaDB.")
         

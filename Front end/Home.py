@@ -2,7 +2,7 @@
 ResumeIQ - AI-Powered Resume Analyser
 ======================================
 Install deps:
-    pip install streamlit plotly anthropic pypdf python-docx
+    pip install streamlit plotly openai pdfplumber python-docx sentence-transformers faiss-cpu chromadb langchain-chroma
 Run:
     streamlit run Home.py
 """

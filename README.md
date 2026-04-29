@@ -8,9 +8,11 @@ A local, AI-powered career assistant that analyzes resumes against job descripti
 
 | Feature | Description |
 |---|---|
-| 📄 **Resume Analysis** | Upload your resume (PDF/DOCX) and a job description to get a match score, skill gaps, and an actionable improvement roadmap |
+| 📄 **Resume Analysis** | Upload your resume (PDF/DOCX/TXT) and a job description to get a match score, skill gaps, and an actionable improvement roadmap |
 | 🎯 **Match Scoring** | Semantic similarity scoring using sentence-transformers + FAISS |
-| 🤖 **Mock Interviewer** | Interactive AI mock interview tailored to the job description |
+| 🎤 **Mock Interviewer** | Interactive AI mock interview with 8 tailored questions (6 Technical, 2 Behavioral) |
+| 📂 **ChromaDB Integration** | Stores and retrieves relevant interview questions based on extracted skills for high-quality practice |
+| 🧠 **Detailed Roadmap** | Generates a personalized 400-600 word career strategist report |
 | 🔒 **100% Local** | No cloud API keys needed — runs on your machine via [LM Studio](https://lmstudio.ai/) |
 
 ---
@@ -29,6 +31,7 @@ ResumeAnalyzer/
 │   ├── Home.py             # Streamlit main page – resume analysis
 │   └── pages/
 │       └── 1_Mock_Interviewer.py  # Mock interview page
+├── chroma_db/              # Vector database for interview questions
 ├── data/                   # Sample resume & JD (for quick testing)
 ├── requirements.txt
 └── .gitignore
@@ -78,7 +81,7 @@ streamlit run Home.py
 
 ## 📸 Screenshots
 
-> _Add screenshots here once the app is running!_
+![Project Demo](./Pics/SampleImage.png)
 
 ---
 
@@ -86,8 +89,8 @@ streamlit run Home.py
 
 - **Frontend:** [Streamlit](https://streamlit.io/)
 - **LLM Backend:** [LM Studio](https://lmstudio.ai/) + Mistral-7B-Instruct (OpenAI-compatible API)
-- **Semantic Search:** `sentence-transformers` + `faiss-cpu`
-- **Document Parsing:** `pypdf`, `python-docx`
+- **Semantic Search:** `sentence-transformers` + `faiss-cpu` + `chromadb`
+- **Document Parsing:** `pdfplumber`, `python-docx`
 - **Visualisation:** `plotly`
 
 ---
