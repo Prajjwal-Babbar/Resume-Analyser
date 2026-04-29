@@ -68,7 +68,7 @@ USER QUESTION:
 {question}
 
 Now decide:
-- Greeting → greet briefly
+- Greeting → greet briefly and invite to ask about resume/job description
 - Irrelevant → reject
 - Relevant → answer concisely
 
