@@ -1,10 +1,7 @@
 import os
 from openai import OpenAI
 from langchain_chroma import Chroma
-from langchain_openai import ChatOpenAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.retrievers.self_query.base import SelfQueryRetriever
-from langchain.chains.query_constructor.base import AttributeInfo
 
 # Import extract_skills from match.py
 try:
@@ -18,7 +15,7 @@ client = OpenAI(
 )
 
 # ─────────────────────────────────────────────────────────────────
-# VECTOR DB SETUP (Self-Query Retriever)
+# VECTOR DB SETUP
 # ─────────────────────────────────────────────────────────────────
 
 CHROMA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "chroma_db"))
@@ -30,30 +27,7 @@ vectorstore = Chroma(
     embedding_function=embeddings
 )
 
-metadata_field_info = [
-    AttributeInfo(
-        name="category",
-        description="The category of the interview question (e.g., Machine Learning, Data Science, etc.)",
-        type="string",
-    ),
-]
-document_content_description = "Technical and behavioral interview questions"
-
-llm_for_retriever = ChatOpenAI(
-    model="mistral-7b-instruct",
-    openai_api_base="http://localhost:1234/v1",
-    openai_api_key="lm-studio",
-    temperature=0
-)
-
-retriever = SelfQueryRetriever.from_llm(
-    llm_for_retriever,
-    vectorstore,
-    document_content_description,
-    metadata_field_info,
-    verbose=True,
-    search_kwargs={"k": 6}
-)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
 
 # ─────────────────────────────────────────────────────────────────
 # PROMPT TEMPLATES
@@ -162,22 +136,15 @@ def fetch_interview_questions(resume: str, jd: str) -> list[str]:
     jd_skills = extract_skills(jd)
     skills_str = ", ".join(jd_skills) if jd_skills else "General technical skills"
 
-    # 2. Retrieve 10 relevant questions from ChromaDB using SelfQueryRetriever
+    # 2. Retrieve relevant questions from ChromaDB using standard retriever
     try:
-        retrieval_query = f"Retrieve 10 interview questions related to: {skills_str}"
-        retrieved_docs = retriever.get_relevant_documents(retrieval_query)
+        retrieved_docs = retriever.get_relevant_documents(skills_str)
         retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
         print(f"✅ Retrieved {len(retrieved_docs)} reference questions from ChromaDB.")
         
     except Exception as e:
-        print(f"⚠️ SelfQueryRetriever failed: {e}. Falling back to standard vector search.")
-        try:
-            standard_retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
-            retrieved_docs = standard_retriever.get_relevant_documents(skills_str)
-            retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
-        except Exception as fallback_e:
-            print(f"⚠️ Fallback vector search also failed: {fallback_e}")
-            retrieved_context = "No reference questions retrieved."
+        print(f"⚠️ Vector search failed: {e}")
+        retrieved_context = "No reference questions retrieved."
 
     # 3. Construct the prompt for the final 8 questions
     prompt = f"""You are a professional technical interviewer.
@@ -193,13 +160,18 @@ Rules:
 - Every question must be directly relevant to the candidate's specific profile and the job role.
 - Do NOT generate generic or random questions.
 - Do NOT repeat similar questions.
-- Output ONLY a numbered list of 8 questions. No extra text, no introduction, no explanation.
+- Return exactly 8 interview questions.
+- One per line.
+- No explanation.
+- No headings.
+- No extra text.
+- Stop after question 8.
 
 Resume:
-{resume[:1500]}
+{resume[:1024]}
 
 Job Description:
-{jd[:1000]}
+{jd[:512]}
 
 Output format (strictly follow this):
 1. [Question]
@@ -218,8 +190,9 @@ Output format (strictly follow this):
         response = client.chat.completions.create(
             model="mistral-7b-instruct",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=800,
-            temperature=0.5
+            max_tokens=512,
+            temperature=0.2,
+            stop=["9.", "\n\n"]
         )
     except Exception as e:
         raise RuntimeError(
