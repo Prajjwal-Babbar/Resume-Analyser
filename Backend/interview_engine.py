@@ -170,6 +170,8 @@ def fetch_interview_questions(resume: str, jd: str) -> list[str]:
         retrieval_query = f"Retrieve 6 interview questions related to: {skills_str}"
         retrieved_docs = retriever.get_relevant_documents(retrieval_query)
         retrieved_context = "\n".join([f"- {doc.page_content}" for doc in retrieved_docs])
+        print(f"✅ Retrieved {len(retrieved_docs)} reference questions from ChromaDB.")
+        
     except Exception as e:
         print(f"⚠️ SelfQueryRetriever failed: {e}. Falling back to standard vector search.")
         try:
