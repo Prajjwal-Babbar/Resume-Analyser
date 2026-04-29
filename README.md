@@ -81,7 +81,7 @@ streamlit run Home.py
 
 ## 📸 Screenshots
 
-> _Add screenshots here once the app is running!_
+![Project Demo](Pics/Screenshot (16).png)
 
 ---
 
